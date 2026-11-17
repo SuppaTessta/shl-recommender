@@ -20,7 +20,7 @@ from .prompts import (
     build_generate_user_prompt,
     build_route_user_prompt,
 )
-from .retrieval import DEFAULT_COMPANIONS, RetrievalIndex
+from .retrieval import RetrievalIndex
 from .schemas import ChatMessage, ChatResponse, Recommendation
 
 logger = logging.getLogger(__name__)

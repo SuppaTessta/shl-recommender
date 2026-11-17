@@ -49,11 +49,12 @@ weights to ship) covers it. I measured retrieval directly against the 10
 gold traces (`tests/eval_retrieval.py`, cumulative conversation as query,
 final confirmed shortlist as ground truth) rather than assuming it worked:
 
-| Pass | Mechanism | Mean pool-coverage |
+| Pass | Mechanism | Mean pool-coverage (per-trace recall of final shortlist, macro-averaged) |
 |---|---|---|
 | 1 | Raw TF-IDF, top-10 | 0.535 |
 | 2 | + wider pool (20) + default-companion injection | 0.782 |
-| 3 | + LLM-generated P/A query-expansion hint | 0.767* |
+| 3 | Production pool (~14 items), no P/A hint | 0.747 |
+| 4 | + P/A query-expansion hint | 0.767* |
 
 *(hand-specified hints simulating competent ROUTE output — measures the
 mechanism, not live model judgment)*
@@ -66,7 +67,7 @@ role-to-instrument reasoning (HIPAA/patient-records implying "safety,
 dependability, integrity" — the Dependability & Safety Instrument's own
 vocabulary, not the query's) has no lexical bridge at all. Browsing the
 entire Personality (66) + Ability (32) categories into every pool raised
-coverage further (0.855), but at ~103 items/call that's 15-20K tokens —
+coverage further (0.855, earlier ad-hoc run, not reproduced by the current script), but at ~103 items/call that's 15-20K tokens —
 past Groq's free-tier per-call budget (~6-12K tokens), rejected outright.
 Replaced with LLM-driven query expansion instead: ROUTE produces a short
 domain-vocabulary phrase (e.g. "safety dependability integrity
@@ -95,8 +96,8 @@ pool, sized to fit token budget.
 Two independent, LLM-free test suites: `eval_retrieval.py` measures
 retrieval quality in isolation against gold shortlists; `
 test_http_pipeline.py` replays all 10 traces' user turns through the *real*
-FastAPI app via HTTP with a scripted mock LLM, asserting schema compliance,
-catalog-only URLs, and no internal errors across ~40 total turns. This
+FastAPI app in-process via FastAPI TestClient with a scripted mock LLM, asserting schema compliance,
+catalog-only URLs, and no internal errors across 38 total user turns. This
 caught a real bug a narrower test would miss: an earlier edit had silently
 deleted a method's `def` line, leaving its body as dead code — syntactically
 valid, so it imported fine, and `/chat`'s top-level `try/except` caught the

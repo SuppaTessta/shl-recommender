@@ -26,10 +26,8 @@ os.environ.pop("GROQ_API_KEY", None)  # force mock backend regardless of shell e
 from fastapi.testclient import TestClient
 
 from app.agent import DEGRADED_REPLY, Agent
-from app.catalog import CatalogStore
 from app.llm import MockLLMClient
 from app.main import app
-from app.retrieval import RetrievalIndex
 
 TRACE_DIR = Path(__file__).resolve().parent / "traces"
 USER_TURN_RE = re.compile(r"\*\*User\*\*\s*\n\n>\s*(.+?)(?=\n\n\*\*Agent\*\*)", re.DOTALL)

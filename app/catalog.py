@@ -52,7 +52,7 @@ class Assessment:
 
     def __post_init__(self):
         if not self.test_types:
-            self.test_types = [CATEGORY_TO_CODE[c] for c in self.categories if c in CATEGORY_TO_CODE]
+            self.test_types = list(dict.fromkeys(CATEGORY_TO_CODE[c] for c in self.categories if c in CATEGORY_TO_CODE))
 
     def search_text(self) -> str:
         """Flattened text blob used for keyword/TF-IDF indexing."""
@@ -82,10 +82,7 @@ def _clean_name(entity_id: str, raw_name: str) -> str:
 
 def load_catalog(path: str | Path) -> list[Assessment]:
     raw_text = Path(path).read_text(encoding="utf-8")
-    # strict=False: the source JSON has raw control characters embedded in a
-    # couple of string fields (scrape artifact), which is invalid per the JSON
-    # spec but tolerated by Python's lenient mode.
-    rows = json.loads(raw_text, strict=False)
+    rows = json.loads(raw_text)
 
     catalog: list[Assessment] = []
     seen_urls: set[str] = set()

@@ -1,0 +1,61 @@
+=== Pass 1: raw TF-IDF, pool=10, no companions ===
+trace   expected  found   coverage  missing
+C1      3         1       0.33      ['OPQ Universal Competency Report 2.0', 'Occupational Personality Questionnaire OPQ32r']
+C2      5         2       0.40      ['Smart Interview Live Coding', 'Linux Programming (General)', 'Occupational Personality Questionnaire OPQ32r']
+C3      4         3       0.75      ['SVAR - Spoken English (US) (New)']
+C4      5         2       0.40      ['Basic Statistics (New)', 'Financial Accounting (New)', 'Occupational Personality Questionnaire OPQ32r']
+C5      5         2       0.40      ['Global Skills Development Report', 'Occupational Personality Questionnaire OPQ32r', 'Global Skills Assessment']
+C6      2         2       1.00      []
+C7      5         1       0.20      ['Medical Terminology (New)', 'Occupational Personality Questionnaire OPQ32r', 'Dependability and Safety Instrument (DSI)', 'Microsoft Word 365 - Essentials (New)']
+C8      5         4       0.80      ['Occupational Personality Questionnaire OPQ32r']
+C9      7         4       0.57      ['SHL Verify Interactive G+', 'Occupational Personality Questionnaire OPQ32r', 'SQL (New)']
+C10     2         1       0.50      ['SHL Verify Interactive G+']
+Mean pool-coverage: 0.535
+
+=== Pass 2: wider pool (20) + default companions ===
+trace   expected  found   coverage  missing
+C1      3         2       0.67      ['OPQ Universal Competency Report 2.0']
+C2      5         3       0.60      ['Smart Interview Live Coding', 'Linux Programming (General)']
+C3      4         3       0.75      ['SVAR - Spoken English (US) (New)']
+C4      5         4       0.80      ['Basic Statistics (New)']
+C5      5         3       0.60      ['Global Skills Development Report', 'Global Skills Assessment']
+C6      2         2       1.00      []
+C7      5         2       0.40      ['Medical Terminology (New)', 'Dependability and Safety Instrument (DSI)', 'Microsoft Word 365 - Essentials (New)']
+C8      5         5       1.00      []
+C9      7         7       1.00      []
+C10     2         2       1.00      []
+Mean pool-coverage: 0.782
+
+=== Pass 3: production pool, no P/A hint (retrieval-only ceiling) ===
+trace   expected  found   coverage  missing
+C1      3         2       0.67      ['OPQ Universal Competency Report 2.0']
+C2      5         3       0.60      ['Smart Interview Live Coding', 'Linux Programming (General)']
+C3      4         3       0.75      ['SVAR - Spoken English (US) (New)']
+C4      5         3       0.60      ['Basic Statistics (New)', 'Financial Accounting (New)']
+C5      5         3       0.60      ['Global Skills Development Report', 'Global Skills Assessment']
+C6      2         2       1.00      []
+C7      5         2       0.40      ['Medical Terminology (New)', 'Dependability and Safety Instrument (DSI)', 'Microsoft Word 365 - Essentials (New)']
+C8      5         5       1.00      []
+C9      7         6       0.86      ['SQL (New)']
+C10     2         2       1.00      []
+Mean pool-coverage: 0.747
+Avg pool size: 14 items (token-budget safe for Groq free tier)
+
+=== Pass 4: production pool WITH hand-specified P/A hints ===
+(hints simulate what a competent ROUTE call should produce per trace's role
+ context — this measures the query-expansion MECHANISM, not LLM judgment quality,
+ since the real hint is generated live by the LLM at request time, not by this
+ offline harness)
+trace   expected  found   coverage  missing
+C1      3         2       0.67      ['OPQ Universal Competency Report 2.0']
+C2      5         3       0.60      ['Smart Interview Live Coding', 'Linux Programming (General)']
+C3      4         3       0.75      ['SVAR - Spoken English (US) (New)']
+C4      5         3       0.60      ['Basic Statistics (New)', 'Financial Accounting (New)']
+C5      5         3       0.60      ['Global Skills Development Report', 'Global Skills Assessment']
+C6      2         2       1.00      []
+C7      5         3       0.60      ['Medical Terminology (New)', 'Microsoft Word 365 - Essentials (New)']
+C8      5         5       1.00      []
+C9      7         6       0.86      ['SQL (New)']
+C10     2         2       1.00      []
+Mean pool-coverage: 0.767
+Avg pool size: 15 items

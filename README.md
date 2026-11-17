@@ -1,8 +1,7 @@
 # SHL Assessment Recommender
 
 Conversational agent that recommends SHL Individual Test Solutions through
-dialogue, built for the AI Research Intern take-home assignment. FastAPI
-service, stateless `/chat`, backed by TF-IDF + category retrieval over the
+dialogue. FastAPI service, stateless `/chat`, backed by TF-IDF + category retrieval over the
 scraped SHL catalog and Groq's free-tier `llama-3.3-70b-versatile`.
 
 See `APPROACH.md` for design rationale, trade-offs, and what didn't work.
@@ -11,7 +10,7 @@ See `APPROACH.md` for design rationale, trade-offs, and what didn't work.
 
 ```
 app/
-  catalog.py     # loads + repairs the scraped catalog, name/URL lookups
+  catalog.py     # loads the scraped catalog, name/URL lookups
   retrieval.py   # TF-IDF index + candidate-pool construction
   history.py     # stateless state reconstruction from prior replies
   guardrails.py  # cheap pre-LLM injection filter
@@ -21,27 +20,27 @@ app/
   schemas.py     # Pydantic request/response contracts
   main.py        # FastAPI app: GET /health, POST /chat
 data/
-  catalog_raw.json   # scraped SHL Individual Test Solutions catalog
+  catalog_raw.json   # scraped SHL Individual Test Solutions catalog (377 items)
+results/
+  eval_retrieval.txt # output of tests/eval_retrieval.py
 tests/
   traces/             # the 10 provided gold conversation traces
   eval_retrieval.py   # offline pool-coverage measurement against the traces
-  test_http_pipeline.py  # replays all 10 traces through the real FastAPI app
+  test_http_pipeline.py  # replays all 10 traces through the real FastAPI app (in-process TestClient)
 ```
 
-## Setup
+## Quickstart
+
+Requires Python 3.12 (Docker is optional).
 
 ```bash
+python -m venv .venv
+source .venv/bin/activate          # Windows Git Bash: source .venv/Scripts/activate
 pip install -r requirements.txt
-cp .env.example .env   # then fill in GROQ_API_KEY — free, no card, at
-                        # https://console.groq.com/keys
+uvicorn app.main:app --port 8000
 ```
 
-## Run locally
-
-```bash
-export GROQ_API_KEY=gsk_...
-uvicorn app.main:app --reload --port 8000
-```
+In a second terminal:
 
 ```bash
 curl -s http://localhost:8000/health
@@ -50,34 +49,60 @@ curl -s -X POST http://localhost:8000/chat -H "Content-Type: application/json" -
 }'
 ```
 
-Without `GROQ_API_KEY` set, the service still boots and `/health` still
-passes, but `/chat` runs on a deterministic mock backend (a startup log
-warns loudly about this) — useful for testing the pipeline without burning
-API calls, not for real conversations.
+Endpoints: `GET /health` and `POST /chat` (stateless: send the full message
+history each call; the reply has `reply`, `recommendations`, `end_of_conversation`).
+
+### LLM backend
+
+The app reads `GROQ_API_KEY` from the process environment (`.env` is not
+loaded automatically). To use the real model (Groq free tier, key at
+https://console.groq.com/keys), set it before starting the server:
+
+```bash
+export GROQ_API_KEY=gsk_...
+```
+
+Without a key the server still boots and uses a deterministic mock LLM
+(a startup warning says so). The mock exercises the full pipeline but is not
+conversational: it asks for more detail on the first turn, then returns a
+heuristic shortlist. The results below were produced with the mock; live
+Groq behaviour was not measured here.
 
 ## Tests
 
-Two independent test suites, neither requires a live LLM call:
+Neither script needs an API key or network access:
 
 ```bash
-python3 tests/eval_retrieval.py      # retrieval-only pool-coverage vs. the 10 gold traces
-python3 tests/test_http_pipeline.py  # full HTTP replay of all 10 traces through the real app
+python tests/eval_retrieval.py      # retrieval pool-coverage vs. the 10 gold traces
+python tests/test_http_pipeline.py  # replays all 10 traces through the FastAPI app (TestClient)
 ```
 
-`test_http_pipeline.py` is the more important one for catching integration
-bugs — it drives the actual FastAPI app over real HTTP with a scripted mock
-LLM, replaying every user turn of all 10 traces and asserting schema
-compliance, catalog-only URLs, and no internal errors at every step.
+`test_http_pipeline.py` asserts schema compliance, catalog-only URLs, and
+that the degraded-mode fallback reply never appears.
 
-## Deployment (Render / Fly / Railway — any free-tier Docker host)
+## Results
+
+Measured by running the code in this repo:
+
+- Catalog: 377 items (66 Personality & Behavior, 32 Ability & Aptitude).
+- API: 2 endpoints (`GET /health`, `POST /chat`).
+- End-to-end: 10/10 gold traces pass (38 user turns).
+- Final-shortlist recall ("pool-coverage") against the gold traces:
+  0.535 raw TF-IDF top-10, 0.782 top-20 + default companions, 0.747 for the
+  production pool (about 14 items), 0.767 with hand-written query-expansion
+  hints. Full output: `results/eval_retrieval.txt`.
+- `/chat` median latency with the mock LLM: 39 ms (excludes real LLM latency).
+
+## Docker
 
 ```bash
 docker build -t shl-recommender .
 docker run -p 8000:8000 -e GROQ_API_KEY=gsk_... shl-recommender
 ```
 
-On the platform: set `GROQ_API_KEY` as an environment variable/secret, point
-it at this `Dockerfile`. No other build config needed — no model weights to
-download, the catalog loads from the bundled JSON in milliseconds, so cold
-start is fast well within the assignment's 2-minute health-check grace
-period.
+The `Dockerfile` is provided for self-hosting; it was not built or run as
+part of this verification, and there is no hosted deployment of this project.
+
+## License
+
+MIT, see `LICENSE`.
